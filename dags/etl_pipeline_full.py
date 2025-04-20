@@ -103,7 +103,7 @@ with DAG(
         for name, df_json in schema.items():
             df = pd.read_json(df_json, orient='split')
             table_name = f"{name}_dim" if name != "fact" else "fact_sales"
-            con.execute(f"CREATE OR REPLACE TABLE retail.{table_name} AS SELECT * FROM df")
+            con.execute(f"CREATE OR REPLACE TABLE retail.{table_name}")
         con.close()
 
     # ✅ 3. Set task dependencies

@@ -8,8 +8,28 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 5s
+      retries: 10
 
+  airflow-init:
+    image: apache/airflow:2.8.1
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ''
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - airflow-logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - airflow-db:/opt/airflow/db
+    command: db init
+    
   airflow-webserver:
     image: apache/airflow:2.8.1
     restart: always
@@ -24,10 +44,9 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     volumes:
       - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
+      - airflow-logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./db:/opt/airflow/db
-
+      - airflow-db:/opt/airflow/db
     command: webserver
 
   airflow-scheduler:
@@ -40,11 +59,32 @@ services:
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     volumes:
       - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
+      - airflow-logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./db:/opt/airflow/db
-
+      - airflow-db:/opt/airflow/db
     command: scheduler
+
+  metabase:
+    image: metabase/metabase:latest
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: metabase
+      MB_DB_PASS: metabase
+      MB_DB_HOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - metabase-data:/metabase-data
+      - ./sqlite:/sqlite
+    restart: always
 
 volumes:
   postgres-db-volume:
+  metabase-data:
+  airflow-logs:
+  airflow-db:
