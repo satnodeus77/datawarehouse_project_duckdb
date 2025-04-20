@@ -12,4 +12,4 @@ USER root
 # Pastikan folder log bisa diakses jika dibutuhkan
 RUN mkdir -p /opt/airflow/logs && chown -R airflow: /opt/airflow/logs
 
-USER airflow
+USER airflow 

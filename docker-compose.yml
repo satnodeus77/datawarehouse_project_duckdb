@@ -81,7 +81,7 @@ services:
     volumes:
       - metabase-data:/metabase-data
       - ./sqlite:/sqlite
-    restart: always
+    restart: always 
 
 volumes:
   postgres-db-volume:
